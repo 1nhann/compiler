@@ -1,5 +1,5 @@
 from lexer import Lexer
-from ast import AST
+from astree import AST
 from tokens import Token
 from collections import deque
 
@@ -95,11 +95,10 @@ class Sequence(Parser):
 
 class Syntax:
     """
-    PRIMARY => (EXPR)|NUMBER|IDENTIFIER|STRING
+    FACTOR => - NUMBER | NUMBER | IDENTIFIER | STRING
 
-    FACTOR => - PRIMARY | PRIMARY
-
-    EXPR => FACTOR OP FACTOR
+    EXPR => ( EXPR )
+            | FACTOR OP EXPR
             | FACTOR
 
     STATEMENTS => STATEMENT EOL STATEMENTS
@@ -126,8 +125,22 @@ class Syntax:
         eof = TokenP(Lexer.EOF)
         expr0 = Parser(AST.EXPR)
 
-        primary = Parser(AST.PRIMARY).oorr(
-           Sequence().first(Punct("(")).aanndd(expr0).aanndd(Punct(")"))
+        # primary = Parser(AST.PRIMARY).oorr(
+        #    Sequence().first(Punct("(")).aanndd(expr0).aanndd(Punct(")"))
+        # ).oorr(
+        #     number
+        # ).oorr(
+        #     identifier
+        # ).oorr(
+        #     string
+        # )
+
+        # factor = Parser(AST.FACTOR).oorr(
+        #     Sequence().first(Char("-")).aanndd(number)
+        # ).oorr(primary)
+
+        factor = Parser(AST.FACTOR).oorr(
+            Sequence().first(Char("-")).aanndd(number)
         ).oorr(
             number
         ).oorr(
@@ -136,12 +149,10 @@ class Syntax:
             string
         )
 
-        factor = Parser(AST.FACTOR).oorr(
-            Sequence().first(Char("-")).aanndd(number)
-        ).oorr(primary)
-
         expr = expr0.oorr(
-            Sequence().first(factor).aanndd(op).aanndd(factor)
+            Sequence().first(Punct("(")).aanndd(expr0).aanndd(Punct(")"))
+        ).oorr(
+            Sequence().first(factor).aanndd(op).aanndd(expr0)
         ).oorr(factor)
 
         if_statement0 = Parser(AST.IFSTATEMENT)
